@@ -12,13 +12,14 @@
         .status-completed { background-color: #10b981; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
         .status-delay { background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
         .status-partial { background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+        .table-auto { table-layout: auto; }
     </style>
 </head>
 <body class="text-gray-800">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
-        <div>
+    <header class="bg-white shadow-sm p-4 flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
             <h1 class="text-xl font-bold text-gray-900">ARL Civil Projects SCM</h1>
             <p class="text-sm text-gray-500">Project Report - <span id="reportPeriod">Loading...</span></p>
         </div>
@@ -39,16 +40,16 @@
                 <h2 id="kpiTotal" class="text-3xl font-bold text-gray-900 mt-1">0</h2>
             </div>
             <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Completed</p>
-                <h2 id="kpiCompleted" class="text-3xl font-bold text-green-600 mt-1">0</h2>
+                <p class="text-sm text-gray-500 font-medium">Total Planned Value</p>
+                <h2 id="kpiValue" class="text-3xl font-bold text-blue-600 mt-1">₹0</h2>
             </div>
             <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Delayed</p>
-                <h2 id="kpiDelayed" class="text-3xl font-bold text-red-600 mt-1">0</h2>
+                <p class="text-sm text-gray-500 font-medium">Total Variance</p>
+                <h2 id="kpiVariance" class="text-3xl font-bold text-purple-600 mt-1">0</h2>
             </div>
             <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Total PO Value</p>
-                <h2 id="kpiValue" class="text-3xl font-bold text-blue-600 mt-1">₹0 Cr</h2>
+                <p class="text-sm text-gray-500 font-medium">Avg. SPI</p>
+                <h2 id="kpiSPI" class="text-3xl font-bold text-green-600 mt-1">0</h2>
             </div>
         </div>
 
@@ -59,19 +60,20 @@
                 <!-- Project Task Summary -->
                 <div class="card p-5">
                     <h3 class="text-lg font-bold mb-4">PROJECT TASK SUMMARY</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                        <table class="w-full text-sm text-left table-auto">
+                            <thead class="bg-gray-50 text-gray-600 uppercase text-xs sticky top-0">
                                 <tr>
-                                    <th class="p-3">Task Name</th>
-                                    <th class="p-3">SBU</th>
-                                    <th class="p-3">Owner</th>
-                                    <th class="p-3">Status</th>
-                                    <th class="p-3">Progress</th>
+                                    <th class="p-3 whitespace-nowrap">Project Name</th>
+                                    <th class="p-3 whitespace-nowrap">Responsible</th>
+                                    <th class="p-3 whitespace-nowrap">Planned Cost</th>
+                                    <th class="p-3 whitespace-nowrap">Variance</th>
+                                    <th class="p-3 whitespace-nowrap">Action Plan</th>
+                                    <th class="p-3 whitespace-nowrap">Tracking Link</th>
                                 </tr>
                             </thead>
                             <tbody id="taskTableBody" class="divide-y divide-gray-100">
-                                <tr><td colspan="5" class="p-4 text-center text-gray-400">Fetching data...</td></tr>
+                                <tr><td colspan="6" class="p-4 text-center text-gray-400">Fetching data...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -80,7 +82,7 @@
                 <!-- Gantt View -->
                 <div class="card p-5">
                     <h3 class="text-lg font-bold mb-4">PLANNING & TRACKING (GANTT VIEW)</h3>
-                    <div id="ganttContainer" class="space-y-3">
+                    <div id="ganttContainer" class="space-y-3 max-h-[300px] overflow-y-auto">
                         <!-- Gantt bars will be injected here -->
                     </div>
                 </div>
@@ -88,12 +90,6 @@
 
             <!-- Right Column: Charts & AI Analysis -->
             <div class="space-y-6">
-                <!-- Status Distribution -->
-                <div class="card p-5">
-                    <h3 class="text-lg font-bold mb-4">STATUS DISTRIBUTION</h3>
-                    <canvas id="statusChart" height="200"></canvas>
-                </div>
-
                 <!-- AI Analysis -->
                 <div class="card p-5 bg-red-50 border border-red-100">
                     <h3 class="text-lg font-bold mb-4 text-red-700">⚠️ AI PROJECT ANALYSIS</h3>
@@ -105,7 +101,7 @@
                 <!-- Risk & Remarks -->
                 <div class="card p-5">
                     <h3 class="text-lg font-bold mb-4">RISK & PROJECT REMARKS</h3>
-                    <div id="riskRemarks" class="space-y-3 text-sm">
+                    <div id="riskRemarks" class="space-y-3 text-sm max-h-[300px] overflow-y-auto">
                         <!-- Remarks injected here -->
                     </div>
                 </div>
@@ -114,9 +110,20 @@
     </main>
 
     <script>
-        // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
-        const API_URL = "https://script.google.com/macros/s/AKfycbwl1z4qfD4fbjSf8SDcXfgh0PmMT-bDeEt82ElXYm6d2H-NVSc_EM-fCB_3mLR8ykz81Q/exec";
-        let statusChartInstance = null;
+        // PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
+        const API_URL = "https://script.google.com/macros/s/AKfycbxtBHi0_XBXotRMSM54m3wYfLlPlLwmMySDR-wbVo3mHC-LEpoCXmq2qd95Iurzrqe3WQ/exec";
+        
+        // Helper function to find the correct column even if sheet has slight spelling differences
+        function getField(row, searchTerms) {
+            for (let key in row) {
+                let lowerKey = key.toLowerCase();
+                // Check if the header contains any of the search terms
+                if (searchTerms.some(term => lowerKey.includes(term))) {
+                    return row[key];
+                }
+            }
+            return null;
+        }
 
         async function fetchData(sheetName = null) {
             let url = API_URL;
@@ -129,111 +136,137 @@
                 // Populate Month Selector
                 const selector = document.getElementById('monthSelector');
                 selector.innerHTML = '';
-                result.availableMonths.forEach(month => {
-                    let option = document.createElement('option');
-                    option.value = month;
-                    option.innerText = month.replace('RACI matrix ', '');
-                    if (month === result.activeMonth) option.selected = true;
-                    selector.appendChild(option);
-                });
+                if(result.availableMonths && result.availableMonths.length > 0) {
+                    result.availableMonths.forEach(month => {
+                        let option = document.createElement('option');
+                        option.value = month;
+                        option.innerText = month.replace('RACI matrix ', '');
+                        if (month === result.activeMonth) option.selected = true;
+                        selector.appendChild(option);
+                    });
+                } else {
+                    selector.innerHTML = '<option>No Sheets Found</option>';
+                }
 
-                document.getElementById('reportPeriod').innerText = result.activeMonth.replace('RACI matrix ', '');
+                document.getElementById('reportPeriod').innerText = result.activeMonth ? result.activeMonth.replace('RACI matrix ', '') : 'N/A';
                 
-                renderDashboard(result.data);
+                if(result.data && result.data.length > 0) {
+                    renderDashboard(result.data);
+                } else {
+                    // Clear dashboard if no data
+                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No data found for this month.</td></tr>';
+                }
             } catch (error) {
                 console.error("Error fetching data:", error);
-                alert("Failed to fetch data. Check API URL or Script permissions.");
+                alert("Failed to fetch data. Check console for details.");
             }
         }
 
         function renderDashboard(data) {
-            // Basic KPIs
+            // KPIs
             document.getElementById('kpiTotal').innerText = data.length;
             
-            // Calculate Statuses (Assuming column name is 'Status')
-            let completed = data.filter(d => String(d.Status).toLowerCase().includes('completed') && !String(d.Status).toLowerCase().includes('partial')).length;
-            let delayed = data.filter(d => String(d.Status).toLowerCase().includes('delay')).length;
-            let partial = data.filter(d => String(d.Status).toLowerCase().includes('partial')).length;
-
-            document.getElementById('kpiCompleted').innerText = completed;
-            document.getElementById('kpiDelayed').innerText = delayed;
+            let totalPlannedValue = 0;
+            let totalVariance = 0;
+            let totalSPI = 0;
+            let spiCount = 0;
 
             // Render Task Table
             const tbody = document.getElementById('taskTableBody');
             tbody.innerHTML = '';
-            data.slice(0, 10).forEach(row => { // showing top 10 for performance
-                let statusClass = 'status-partial';
-                if(String(row.Status).toLowerCase().includes('completed')) statusClass = 'status-completed';
-                if(String(row.Status).toLowerCase().includes('delay')) statusClass = 'status-delay';
-                
-                // Assuming columns: 'Project Name', 'Department', 'Responsible', 'Status', 'SPI'
-                tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 font-medium">${row['Project Name'] || 'N/A'}</td>
-                        <td class="p-3">${row['Department'] || 'N/A'}</td>
-                        <td class="p-3">${row['Responsible'] || 'N/A'}</td>
-                        <td class="p-3"><span class="${statusClass}">${row['Status'] || 'N/A'}</span></td>
-                        <td class="p-3">${(row['SPI'] * 100).toFixed(0) || 0}%</td>
-                    </tr>
-                `;
-            });
-
-            // Render Gantt View (Simple visual representation based on SPI)
             const gantt = document.getElementById('ganttContainer');
             gantt.innerHTML = '';
-            data.slice(0, 5).forEach(row => {
-                let progress = (row['SPI'] || 0) * 100;
+            const riskDiv = document.getElementById('riskRemarks');
+            riskDiv.innerHTML = '';
+
+            let delayCount = 0;
+
+            data.forEach(row => {
+                // Smartly extract fields based on partial header names
+                let projectName = getField(row, ['project name', 'task name', 'description']) || 'N/A';
+                let responsible = getField(row, ['responsible', 'owner', 'r person']) || 'N/A';
+                let plannedValue = parseFloat(getField(row, ['planned value', 'planned cost', 'budget'])) || 0;
+                let earnedValue = parseFloat(getField(row, ['earned value', 'completed value'])) || 0;
+                let variance = getField(row, ['variance']) || 0;
+                let spi = parseFloat(getField(row, ['spi', 'schedule performance'])) || 0;
+                let actionPlan = getField(row, ['action plan', 'action']) || 'No action plan';
+                let trackingLink = getField(row, ['tracking board link', 'tracking link', 'board link', 'url', 'link']) || '';
+                let status = getField(row, ['status', 'current status']) || '';
+
+                // KPI Math
+                totalPlannedValue += plannedValue;
+                totalVariance += parseFloat(variance) || 0;
+                if (spi > 0) { totalSPI += spi; spiCount++; }
+
+                // Status formatting
+                let statusClass = 'status-partial';
+                if(String(status).toLowerCase().includes('completed') && !String(status).toLowerCase().includes('partial')) statusClass = 'status-completed';
+                if(String(status).toLowerCase().includes('delay')) {
+                    statusClass = 'status-delay';
+                    delayCount++;
+                }
+
+                // Table Row
+                let linkHtml = trackingLink ? `<a href="${trackingLink}" target="_blank" class="text-blue-600 underline">Open Link</a>` : 'N/A';
+                
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-medium whitespace-normal">${projectName}</td>
+                        <td class="p-3 whitespace-nowrap">${responsible}</td>
+                        <td class="p-3 whitespace-nowrap">₹${plannedValue.toFixed(2)} Cr</td>
+                        <td class="p-3 whitespace-nowrap">${variance}</td>
+                        <td class="p-3 whitespace-normal text-xs">${actionPlan}</td>
+                        <td class="p-3 whitespace-nowrap">${linkHtml}</td>
+                    </tr>
+                `;
+
+                // Gantt Bar
+                let progress = spi > 0 ? (spi * 100) : (plannedValue > 0 ? (earnedValue/plannedValue)*100 : 0);
+                if(progress > 100) progress = 100;
+                if(progress < 0) progress = 0;
+                
                 let barColor = 'bg-green-500';
-                if(String(row.Status).toLowerCase().includes('delay')) barColor = 'bg-red-500';
-                if(String(row.Status).toLowerCase().includes('partial')) barColor = 'bg-yellow-500';
+                if(String(status).toLowerCase().includes('delay')) barColor = 'bg-red-500';
+                else if(String(status).toLowerCase().includes('partial')) barColor = 'bg-yellow-500';
 
                 gantt.innerHTML += `
                     <div>
                         <div class="flex justify-between text-xs mb-1">
-                            <span>${row['Project Name'] || 'N/A'}</span>
-                            <span>SBU: ${row['Department'] || 'N/A'}</span>
+                            <span class="font-medium">${projectName.substring(0, 40)}${projectName.length > 40 ? '...' : ''}</span>
+                            <span>SPI: ${spi.toFixed(2)}</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2.5">
                             <div class="${barColor} h-2.5 rounded-full" style="width: ${progress}%"></div>
                         </div>
                     </div>
                 `;
-            });
 
-            // Render Status Chart
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            if (statusChartInstance) statusChartInstance.destroy();
-            statusChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Completed', 'Delayed', 'Partial Completed', 'Others'],
-                    datasets: [{
-                        data: [completed, delayed, partial, (data.length - completed - delayed - partial)],
-                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { plugins: { legend: { position: 'bottom' } } }
-            });
-
-            // AI Analysis & Risk Remarks
-            document.getElementById('aiAnalysis').innerHTML = `
-                <p>🔴 <b>High Risk Detected:</b> There are ${delayed} delayed tasks.</p>
-                <p>🟡 <b>Attention Required:</b> ${partial} tasks are partially completed.</p>
-                <p>✅ <b>Healthy Progress:</b> ${completed} tasks successfully completed.</p>
-            `;
-
-            const riskDiv = document.getElementById('riskRemarks');
-            riskDiv.innerHTML = '';
-            data.filter(d => String(d.Status).toLowerCase().includes('delay') || String(d.Status).toLowerCase().includes('partial'))
-                .slice(0, 5).forEach(row => {
+                // Risk & Remarks
+                if(String(status).toLowerCase().includes('delay') || String(status).toLowerCase().includes('partial')) {
                     riskDiv.innerHTML += `
-                        <div class="border-l-4 border-red-500 pl-3 py-1">
-                            <p class="font-medium">${row['Project Name'] || 'N/A'}</p>
-                            <p class="text-gray-500 text-xs">${row['Action Plan'] || 'No action plan provided'}</p>
+                        <div class="border-l-4 border-red-500 pl-3 py-1 bg-red-50">
+                            <p class="font-medium text-gray-900">${projectName.substring(0, 50)}${projectName.length > 50 ? '...' : ''}</p>
+                            <p class="text-gray-600 text-xs mt-1"><b>Action:</b> ${actionPlan}</p>
+                            <p class="text-gray-500 text-xs"><b>Owner:</b> ${responsible}</p>
                         </div>
                     `;
-                });
+                }
+            });
+
+            // Update Final KPIs
+            document.getElementById('kpiValue').innerText = `₹${totalPlannedValue.toFixed(2)} Cr`;
+            document.getElementById('kpiVariance').innerText = totalVariance.toFixed(2);
+            document.getElementById('kpiSPI').innerText = spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0';
+
+            // AI Analysis
+            let completedCount = data.filter(d => String(getField(d, ['status'])).toLowerCase().includes('completed') && !String(getField(d, ['status'])).toLowerCase().includes('partial')).length;
+            
+            document.getElementById('aiAnalysis').innerHTML = `
+                <p>🔴 <b>High Risk Detected:</b> There are ${delayCount} delayed tasks.</p>
+                <p>✅ <b>Healthy Progress:</b> ${completedCount} tasks successfully completed.</p>
+                <p>📊 <b>Financials:</b> Total Planned Value is ₹${totalPlannedValue.toFixed(2)} Cr with a variance of ${totalVariance.toFixed(2)}.</p>
+                <p>⏱️ <b>Schedule:</b> Average Schedule Performance Index (SPI) is ${spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0'}.</p>
+            `;
         }
 
         // Event Listener for Month Change
