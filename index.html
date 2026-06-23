@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARL Civil Projects Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .status-completed { background-color: #10b981; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+        .status-delay { background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+        .status-partial { background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold text-gray-900">ARL Civil Projects SCM</h1>
+            <p class="text-sm text-gray-500">Project Report - <span id="reportPeriod">Loading...</span></p>
+        </div>
+        <div class="flex items-center space-x-4">
+            <label class="text-sm font-medium">Select Month:</label>
+            <select id="monthSelector" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option>Loading...</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="p-6 space-y-6">
+        
+        <!-- KPI Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="card p-4">
+                <p class="text-sm text-gray-500 font-medium">Total Tasks</p>
+                <h2 id="kpiTotal" class="text-3xl font-bold text-gray-900 mt-1">0</h2>
+            </div>
+            <div class="card p-4">
+                <p class="text-sm text-gray-500 font-medium">Completed</p>
+                <h2 id="kpiCompleted" class="text-3xl font-bold text-green-600 mt-1">0</h2>
+            </div>
+            <div class="card p-4">
+                <p class="text-sm text-gray-500 font-medium">Delayed</p>
+                <h2 id="kpiDelayed" class="text-3xl font-bold text-red-600 mt-1">0</h2>
+            </div>
+            <div class="card p-4">
+                <p class="text-sm text-gray-500 font-medium">Total PO Value</p>
+                <h2 id="kpiValue" class="text-3xl font-bold text-blue-600 mt-1">₹0 Cr</h2>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Column: Tables & Gantt -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Project Task Summary -->
+                <div class="card p-5">
+                    <h3 class="text-lg font-bold mb-4">PROJECT TASK SUMMARY</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-500 uppercase text-xs">
+                                <tr>
+                                    <th class="p-3">Task Name</th>
+                                    <th class="p-3">SBU</th>
+                                    <th class="p-3">Owner</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Progress</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskTableBody" class="divide-y divide-gray-100">
+                                <tr><td colspan="5" class="p-4 text-center text-gray-400">Fetching data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Gantt View -->
+                <div class="card p-5">
+                    <h3 class="text-lg font-bold mb-4">PLANNING & TRACKING (GANTT VIEW)</h3>
+                    <div id="ganttContainer" class="space-y-3">
+                        <!-- Gantt bars will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Charts & AI Analysis -->
+            <div class="space-y-6">
+                <!-- Status Distribution -->
+                <div class="card p-5">
+                    <h3 class="text-lg font-bold mb-4">STATUS DISTRIBUTION</h3>
+                    <canvas id="statusChart" height="200"></canvas>
+                </div>
+
+                <!-- AI Analysis -->
+                <div class="card p-5 bg-red-50 border border-red-100">
+                    <h3 class="text-lg font-bold mb-4 text-red-700">⚠️ AI PROJECT ANALYSIS</h3>
+                    <div id="aiAnalysis" class="text-sm text-gray-700 space-y-2">
+                        Analyzing data...
+                    </div>
+                </div>
+
+                <!-- Risk & Remarks -->
+                <div class="card p-5">
+                    <h3 class="text-lg font-bold mb-4">RISK & PROJECT REMARKS</h3>
+                    <div id="riskRemarks" class="space-y-3 text-sm">
+                        <!-- Remarks injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+        const API_URL = "https://script.google.com/macros/s/AKfycbwl1z4qfD4fbjSf8SDcXfgh0PmMT-bDeEt82ElXYm6d2H-NVSc_EM-fCB_3mLR8ykz81Q/exec";
+        let statusChartInstance = null;
+
+        async function fetchData(sheetName = null) {
+            let url = API_URL;
+            if (sheetName) url += `?sheet=${encodeURIComponent(sheetName)}`;
+            
+            try {
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                // Populate Month Selector
+                const selector = document.getElementById('monthSelector');
+                selector.innerHTML = '';
+                result.availableMonths.forEach(month => {
+                    let option = document.createElement('option');
+                    option.value = month;
+                    option.innerText = month.replace('RACI matrix ', '');
+                    if (month === result.activeMonth) option.selected = true;
+                    selector.appendChild(option);
+                });
+
+                document.getElementById('reportPeriod').innerText = result.activeMonth.replace('RACI matrix ', '');
+                
+                renderDashboard(result.data);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Failed to fetch data. Check API URL or Script permissions.");
+            }
+        }
+
+        function renderDashboard(data) {
+            // Basic KPIs
+            document.getElementById('kpiTotal').innerText = data.length;
+            
+            // Calculate Statuses (Assuming column name is 'Status')
+            let completed = data.filter(d => String(d.Status).toLowerCase().includes('completed') && !String(d.Status).toLowerCase().includes('partial')).length;
+            let delayed = data.filter(d => String(d.Status).toLowerCase().includes('delay')).length;
+            let partial = data.filter(d => String(d.Status).toLowerCase().includes('partial')).length;
+
+            document.getElementById('kpiCompleted').innerText = completed;
+            document.getElementById('kpiDelayed').innerText = delayed;
+
+            // Render Task Table
+            const tbody = document.getElementById('taskTableBody');
+            tbody.innerHTML = '';
+            data.slice(0, 10).forEach(row => { // showing top 10 for performance
+                let statusClass = 'status-partial';
+                if(String(row.Status).toLowerCase().includes('completed')) statusClass = 'status-completed';
+                if(String(row.Status).toLowerCase().includes('delay')) statusClass = 'status-delay';
+                
+                // Assuming columns: 'Project Name', 'Department', 'Responsible', 'Status', 'SPI'
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 font-medium">${row['Project Name'] || 'N/A'}</td>
+                        <td class="p-3">${row['Department'] || 'N/A'}</td>
+                        <td class="p-3">${row['Responsible'] || 'N/A'}</td>
+                        <td class="p-3"><span class="${statusClass}">${row['Status'] || 'N/A'}</span></td>
+                        <td class="p-3">${(row['SPI'] * 100).toFixed(0) || 0}%</td>
+                    </tr>
+                `;
+            });
+
+            // Render Gantt View (Simple visual representation based on SPI)
+            const gantt = document.getElementById('ganttContainer');
+            gantt.innerHTML = '';
+            data.slice(0, 5).forEach(row => {
+                let progress = (row['SPI'] || 0) * 100;
+                let barColor = 'bg-green-500';
+                if(String(row.Status).toLowerCase().includes('delay')) barColor = 'bg-red-500';
+                if(String(row.Status).toLowerCase().includes('partial')) barColor = 'bg-yellow-500';
+
+                gantt.innerHTML += `
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>${row['Project Name'] || 'N/A'}</span>
+                            <span>SBU: ${row['Department'] || 'N/A'}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="${barColor} h-2.5 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Render Status Chart
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+            statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Delayed', 'Partial Completed', 'Others'],
+                    datasets: [{
+                        data: [completed, delayed, partial, (data.length - completed - delayed - partial)],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom' } } }
+            });
+
+            // AI Analysis & Risk Remarks
+            document.getElementById('aiAnalysis').innerHTML = `
+                <p>🔴 <b>High Risk Detected:</b> There are ${delayed} delayed tasks.</p>
+                <p>🟡 <b>Attention Required:</b> ${partial} tasks are partially completed.</p>
+                <p>✅ <b>Healthy Progress:</b> ${completed} tasks successfully completed.</p>
+            `;
+
+            const riskDiv = document.getElementById('riskRemarks');
+            riskDiv.innerHTML = '';
+            data.filter(d => String(d.Status).toLowerCase().includes('delay') || String(d.Status).toLowerCase().includes('partial'))
+                .slice(0, 5).forEach(row => {
+                    riskDiv.innerHTML += `
+                        <div class="border-l-4 border-red-500 pl-3 py-1">
+                            <p class="font-medium">${row['Project Name'] || 'N/A'}</p>
+                            <p class="text-gray-500 text-xs">${row['Action Plan'] || 'No action plan provided'}</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Event Listener for Month Change
+        document.getElementById('monthSelector').addEventListener('change', (e) => {
+            fetchData(e.target.value);
+        });
+
+        // Initial Load
+        fetchData();
+    </script>
+</body>
+</html>
