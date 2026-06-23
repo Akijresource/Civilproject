@@ -14,37 +14,19 @@
         }
         body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; color: #334155; }
         
-        /* Animations */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translate3d(0, 30px, 0); }
-            to { opacity: 1; transform: translate3d(0, 0, 0); }
-        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate3d(0, 30px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
         .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; opacity: 0; }
         
-        @keyframes scanLine {
-            0% { top: 0%; opacity: 0; }
-            50% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-        .scanner-line {
-            position: absolute; left: 0; width: 100%; height: 4px;
-            background: linear-gradient(90deg, transparent, #22d3ee, transparent);
-            animation: scanLine 2s infinite linear;
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); }
-            50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.8); }
-        }
+        @keyframes scanLine { 0% { top: 0%; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .scanner-line { position: absolute; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #22d3ee, transparent); animation: scanLine 2s infinite linear; }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); } 50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.8); } }
         .ai-glow { animation: pulseGlow 2s infinite; }
 
-        /* Scrollbar Styling */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
-        /* Utility Classes */
         .card { background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01); transition: transform 0.3s ease; }
         .card:hover { transform: translateY(-3px); }
         .gradient-card { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; }
@@ -52,13 +34,14 @@
         .success-card { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
         .warning-card { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
         .danger-card { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+        .teal-card { background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white; }
+        .purple-card { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; }
         
         .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
         .bg-completed { background-color: #d1fae5; color: #059669; }
         .bg-delay { background-color: #fee2e2; color: #dc2626; }
         .bg-partial { background-color: #fef3c7; color: #d97706; }
         .bg-pipeline { background-color: #e0e7ff; color: #4f46e5; }
-
         .gantt-row { transition: transform 0.2s; }
         .gantt-row:hover { transform: scale(1.02); }
     </style>
@@ -74,18 +57,26 @@
                 <p class="text-xs text-slate-400">AI Driven Project Report - <span id="reportPeriod" class="font-medium text-cyan-400">Initializing...</span></p>
             </div>
         </div>
-        <div class="flex items-center space-x-4 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
-            <label class="text-sm font-medium text-slate-300">Select Month:</label>
-            <select id="monthSelector" class="bg-slate-900 text-white border border-slate-600 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer">
-                <option>Loading...</option>
-            </select>
+        <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 bg-slate-800 px-4 py-3 rounded-xl border border-slate-700 w-full md:w-auto">
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <label class="text-sm font-medium text-slate-300 whitespace-nowrap">SBU:</label>
+                <select id="sbuSelector" class="bg-slate-900 text-white border border-slate-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer w-full">
+                    <option>ALL</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <label class="text-sm font-medium text-slate-300 whitespace-nowrap">Month:</label>
+                <select id="monthSelector" class="bg-slate-900 text-white border border-slate-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer w-full">
+                    <option>Loading...</option>
+                </select>
+            </div>
         </div>
     </header>
 
     <main class="p-6 md:p-8 space-y-8">
         
-        <!-- KPI Cards Row (6 Cards) -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- KPI Cards Row (8 Cards) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="card p-4 animate-fadeInUp" style="animation-delay: 0.1s">
                 <p class="text-xs text-slate-500 font-medium mb-1">Total Tasks</p>
                 <h2 id="kpiTotal" class="text-2xl font-bold text-slate-800">0</h2>
@@ -103,10 +94,18 @@
                 <h2 id="kpiInactive" class="text-2xl font-bold">0</h2>
             </div>
             <div class="card gradient-card p-4 animate-fadeInUp" style="animation-delay: 0.5s">
-                <p class="text-xs font-medium mb-1 opacity-90">Planned Value (BDT)</p>
+                <p class="text-xs font-medium mb-1 opacity-90">Planned Value</p>
                 <h2 id="kpiValue" class="text-2xl font-bold">৳0</h2>
             </div>
-            <div class="card dark-card p-4 animate-fadeInUp" style="animation-delay: 0.6s">
+            <div class="card teal-card p-4 animate-fadeInUp" style="animation-delay: 0.6s">
+                <p class="text-xs font-medium mb-1 opacity-90">Earned Value</p>
+                <h2 id="kpiEarned" class="text-2xl font-bold">৳0</h2>
+            </div>
+            <div class="card purple-card p-4 animate-fadeInUp" style="animation-delay: 0.7s">
+                <p class="text-xs font-medium mb-1 opacity-90">Total Variance</p>
+                <h2 id="kpiVariance" class="text-2xl font-bold">0</h2>
+            </div>
+            <div class="card dark-card p-4 animate-fadeInUp" style="animation-delay: 0.8s">
                 <p class="text-xs text-slate-400 font-medium mb-1">Avg. SPI</p>
                 <h2 id="kpiSPI" class="text-2xl font-bold text-cyan-400">0.00</h2>
             </div>
@@ -127,15 +126,17 @@
                             <thead class="bg-slate-50 text-slate-500 uppercase text-xs sticky top-0 z-10">
                                 <tr>
                                     <th class="p-4">Project Name</th>
+                                    <th class="p-4">SBU</th>
                                     <th class="p-4">Responsible</th>
-                                    <th class="p-4">Cost (BDT)</th>
+                                    <th class="p-4">Planned (৳)</th>
+                                    <th class="p-4">Earned (৳)</th>
                                     <th class="p-4">Variance</th>
                                     <th class="p-4">Action Plan</th>
                                     <th class="p-4">Track</th>
                                 </tr>
                             </thead>
                             <tbody id="taskTableBody" class="divide-y divide-slate-100">
-                                <tr><td colspan="6" class="p-8 text-center text-slate-400">Fetching data...</td></tr>
+                                <tr><td colspan="8" class="p-8 text-center text-slate-400">Fetching data...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -180,10 +181,9 @@
     </main>
 
     <script>
-        // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
-        const API_URL = "https://script.google.com/macros/s/AKfycbxtBHi0_XBXotRMSM54m3wYfLlPlLwmMySDR-wbVo3mHC-LEpoCXmq2qd95Iurzrqe3WQ/exec";
+        // PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
+        const API_URL = "https://script.google.com/macros/s/AKfycbyLhKkbtVMTB9ikk-FwIDeH8GOOLezy3d1k-lnxJF7vrHApbUo47JxbX5iLSCobtU2Hiw/exec";
         
-        // Helper function to find the correct column
         function getField(row, searchTerms) {
             for (let key in row) {
                 let lowerKey = key.toLowerCase();
@@ -194,7 +194,6 @@
             return null;
         }
 
-        // Animated Counter for KPIs
         function animateValue(id, start, end, duration, prefix = '', suffix = '') {
             const obj = document.getElementById(id);
             let startTimestamp = null;
@@ -210,45 +209,71 @@
             window.requestAnimationFrame(step);
         }
 
-        // Typewriter effect for AI
         function typeAI(text, i, fnCallback) {
             if (i < text.length) {
                 document.getElementById('aiAnalysis').innerHTML = text.substring(0, i+1) + '<span class="text-cyan-400 animate-pulse">_</span>';
                 setTimeout(function() {
                     typeAI(text, i + 1, fnCallback)
-                }, 15); // Speed of typing
+                }, 15);
             } else if (typeof fnCallback == 'function') {
                 setTimeout(fnCallback, 700);
                 document.getElementById('aiAnalysis').innerHTML = text;
             }
         }
 
-        async function fetchData(sheetName = null) {
+        async function fetchData(sheetName = null, sbuName = null) {
             let url = API_URL;
-            if (sheetName) url += `?sheet=${encodeURIComponent(sheetName)}`;
+            let params = [];
+            if (sheetName) params.push(`sheet=${encodeURIComponent(sheetName)}`);
+            if (sbuName) params.push(`sbu=${encodeURIComponent(sbuName)}`);
+            if (params.length) url += `?${params.join('&')}`;
             
             try {
                 const response = await fetch(url);
-                const result = await response.json();
+                const result = await response.json());
                 
-                const selector = document.getElementById('monthSelector');
-                selector.innerHTML = '';
+                // Populate Month Selector
+                const monthSelector = document.getElementById('monthSelector');
+                let currentMonthVal = monthSelector.value;
+                monthSelector.innerHTML = '<option value="ALL">All Months</option>';
                 if(result.availableMonths && result.availableMonths.length > 0) {
-                    result.availableMonths.forEach(month => {
+                    result.availableMonths.reverse().forEach(month => { // reverse to show latest first
                         let option = document.createElement('option');
                         option.value = month;
                         option.innerText = month.replace('RACI matrix ', '');
-                        if (month === result.activeMonth) option.selected = true;
-                        selector.appendChild(option);
+                        monthSelector.appendChild(option);
                     });
                 }
+                if (sheetName) monthSelector.value = sheetName;
+                else if (currentMonthVal) monthSelector.value = currentMonthVal;
+                else monthSelector.value = result.activeMonth;
 
-                document.getElementById('reportPeriod').innerText = result.activeMonth ? result.activeMonth.replace('RACI matrix ', '') : 'N/A';
+                // Populate SBU Selector
+                const sbuSelector = document.getElementById('sbuSelector');
+                let currentSbuVal = sbuSelector.value;
+                sbuSelector.innerHTML = '<option value="ALL">ALL</option>';
+                if(result.availableSBUs && result.availableSBUs.length > 0) {
+                    result.availableSBUs.forEach(sbu => {
+                        let option = document.createElement('option');
+                        option.value = sbu;
+                        option.innerText = sbu;
+                        sbuSelector.appendChild(option);
+                    });
+                }
+                if (sbuName) sbuSelector.value = sbuName;
+                else if (currentSbuVal && currentSbuVal !== 'Loading...') sbuSelector.value = currentSbuVal;
+
+                // Update Period Text
+                let periodText = monthSelector.value === 'ALL' ? 'All Months' : monthSelector.options[monthSelector.selectedIndex].text;
+                if (sbuSelector.value !== 'ALL') periodText += ` (${sbuSelector.value})`;
+                document.getElementById('reportPeriod').innerText = periodText;
                 
                 if(result.data && result.data.length > 0) {
                     renderDashboard(result.data);
                 } else {
-                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">No data found for this month.</td></tr>';
+                    // Clear dashboard if no data
+                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No data found for this selection.</td></tr>';
+                    renderDashboard([]);
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -256,16 +281,15 @@
         }
 
         function renderDashboard(rawData) {
-            // Filter out the Total row at the bottom
             let data = rawData.filter(row => {
                 let projectName = getField(row, ['project name', 'task name', 'description']) || '';
                 let lowerName = String(projectName).toLowerCase();
-                // Ignore if the row is entirely empty or has 'total' in the project name column
                 if (lowerName.includes('total') || lowerName.trim() === '') return false;
                 return true;
             });
 
             let totalPlannedValue = 0;
+            let totalEarnedValue = 0;
             let totalVariance = 0;
             let totalSPI = 0;
             let spiCount = 0;
@@ -286,6 +310,7 @@
 
             data.forEach((row, index) => {
                 let projectName = getField(row, ['project name', 'task name', 'description']) || 'N/A';
+                let sbu = getField(row, ['department', 'sbu', 'business unit']) || 'N/A';
                 let responsible = getField(row, ['responsible', 'owner', 'r person']) || 'N/A';
                 let plannedValue = parseFloat(getField(row, ['planned value', 'planned cost', 'budget'])) || 0;
                 let earnedValue = parseFloat(getField(row, ['earned value', 'completed value'])) || 0;
@@ -296,18 +321,18 @@
                 let status = getField(row, ['status', 'current status']) || '';
 
                 totalPlannedValue += plannedValue;
+                totalEarnedValue += earnedValue;
                 totalVariance += parseFloat(variance) || 0;
                 if (spi > 0) { totalSPI += spi; spiCount++; }
 
                 let statusText = String(status).toLowerCase();
                 
-                // Categorize Projects (Active, Pending, Inactive)
                 if (statusText.includes('not start') || statusText.includes('pipeline') || statusText.includes('pending') || statusText.includes('pause')) {
                     pendingCount++;
                 } else if (statusText.includes('inactive') || statusText.includes('hold') || statusText.includes('cancel')) {
                     inactiveCount++;
                 } else {
-                    activeCount++; // Includes Completed, Delay, Partial, On Time etc.
+                    activeCount++;
                 }
 
                 let statusClass = 'bg-pipeline';
@@ -320,15 +345,16 @@
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors animate-fadeInUp" style="animation-delay: ${0.05 * index}s">
                         <td class="p-4 font-medium text-slate-800">${projectName}</td>
+                        <td class="p-4 text-slate-600">${sbu}</td>
                         <td class="p-4 text-slate-600">${responsible}</td>
                         <td class="p-4 text-slate-600">৳${plannedValue.toLocaleString('en-US')}</td>
+                        <td class="p-4 text-slate-600">৳${earnedValue.toLocaleString('en-US')}</td>
                         <td class="p-4 text-slate-600">${variance}</td>
                         <td class="p-4 text-xs text-slate-500 max-w-[200px] truncate" title="${actionPlan}">${actionPlan}</td>
                         <td class="p-4">${linkHtml}</td>
                     </tr>
                 `;
 
-                // Gantt Bar
                 let progress = spi > 0 ? (spi * 100) : (plannedValue > 0 ? (earnedValue/plannedValue)*100 : 0);
                 if(progress > 100) progress = 100;
                 if(progress < 0) progress = 0;
@@ -350,7 +376,6 @@
                     </div>
                 `;
 
-                // Risk & Remarks
                 if(statusText.includes('delay') || statusText.includes('partial')) {
                     riskDiv.innerHTML += `
                         <div class="border-l-4 ${statusText.includes('delay') ? 'border-red-500' : 'border-amber-500'} pl-4 py-3 bg-slate-50 rounded-r-lg animate-fadeInUp" style="animation-delay: ${0.03 * index}s">
@@ -368,6 +393,8 @@
             animateValue('kpiPending', 0, pendingCount, 1000);
             animateValue('kpiInactive', 0, inactiveCount, 1000);
             animateValue('kpiValue', 0, totalPlannedValue, 1200, '৳');
+            animateValue('kpiEarned', 0, totalEarnedValue, 1200, '৳');
+            animateValue('kpiVariance', 0, totalVariance, 1200);
             document.getElementById('kpiSPI').innerText = spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00';
 
             // Animate Gantt Bars width on load
@@ -380,23 +407,28 @@
             // AI Analysis Typing Effect
             setTimeout(() => {
                 document.getElementById('aiScanner').style.display = 'none';
-                let aiText = `> System: Analysis Complete.\n> 🟢 Active: ${activeCount} projects currently in progress.\n> 🟡 Pending: ${pendingCount} projects waiting to start.\n> 🔴 Delayed: ${delayCount} tasks need immediate attention.\n> 💰 Budget: Total planned value is ৳${totalPlannedValue.toLocaleString('en-US')}.\n> ⚡ Efficiency: Average SPI is ${(spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00')}.`;
+                let aiText = `> System: Analysis Complete.\n> 🟢 Active: ${activeCount} projects currently in progress.\n> 🟡 Pending: ${pendingCount} projects waiting to start.\n> 🔴 Delayed: ${delayCount} tasks need immediate attention.\n> 💰 Budget: Planned ৳${totalPlannedValue.toLocaleString('en-US')} | Earned ৳${totalEarnedValue.toLocaleString('en-US')}.\n> 📉 Variance: Total variance is ${totalVariance.toLocaleString('en-US')}.\n> ⚡ Efficiency: Average SPI is ${(spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00')}.`;
                 
                 document.getElementById('aiAnalysis').innerHTML = '';
                 typeAI(aiText, 0, function(){});
-            }, 1500); // 1.5 sec delay to show scanner animation
+            }, 1500);
         }
 
-        // Event Listener for Month Change
+        // Event Listeners
         document.getElementById('monthSelector').addEventListener('change', (e) => {
-            // Reset AI Box to loading state on month change
             document.getElementById('aiScanner').style.display = 'block';
             document.getElementById('aiAnalysis').innerHTML = '<span class="text-cyan-400">> Re-calibrating AI model...</span>';
-            fetchData(e.target.value);
+            fetchData(e.target.value, document.getElementById('sbuSelector').value);
+        });
+
+        document.getElementById('sbuSelector').addEventListener('change', (e) => {
+            document.getElementById('aiScanner').style.display = 'block';
+            document.getElementById('aiAnalysis').innerHTML = '<span class="text-cyan-400">> Filtering by SBU...</span>';
+            fetchData(document.getElementById('monthSelector').value, e.target.value);
         });
 
         // Initial Load
-        fetchData();
+        fetchData(); // Defaults to latest month and ALL SBUs
     </script>
 </body>
 </html>
