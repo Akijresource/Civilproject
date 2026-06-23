@@ -3,105 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARL Civil Projects Dashboard</title>
+    <title>ARL Civil Projects | AI Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .status-completed { background-color: #10b981; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
-        .status-delay { background-color: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
-        .status-partial { background-color: #f59e0b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; }
-        .table-auto { table-layout: auto; }
+        :root {
+            --primary: #4f46e5;
+            --secondary: #0f172a;
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; color: #334155; }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translate3d(0, 30px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        .animate-fadeInUp { animation: fadeInUp 0.6s ease-out forwards; opacity: 0; }
+        
+        @keyframes scanLine {
+            0% { top: 0%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scanner-line {
+            position: absolute; left: 0; width: 100%; height: 4px;
+            background: linear-gradient(90deg, transparent, #22d3ee, transparent);
+            animation: scanLine 2s infinite linear;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(34, 211, 238, 0.3); }
+            50% { box-shadow: 0 0 25px rgba(34, 211, 238, 0.8); }
+        }
+        .ai-glow { animation: pulseGlow 2s infinite; }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Utility Classes */
+        .card { background: white; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01); transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-3px); }
+        .gradient-card { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; }
+        .dark-card { background: #0f172a; color: white; }
+        
+        .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bg-completed { background-color: #d1fae5; color: #059669; }
+        .bg-delay { background-color: #fee2e2; color: #dc2626; }
+        .bg-partial { background-color: #fef3c7; color: #d97706; }
+        .bg-pipeline { background-color: #e0e7ff; color: #4f46e5; }
+
+        .gantt-row { transition: transform 0.2s; }
+        .gantt-row:hover { transform: scale(1.02); }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="overflow-x-hidden">
 
     <!-- Header -->
-    <header class="bg-white shadow-sm p-4 flex flex-col md:flex-row justify-between items-center">
-        <div class="mb-4 md:mb-0">
-            <h1 class="text-xl font-bold text-gray-900">ARL Civil Projects SCM</h1>
-            <p class="text-sm text-gray-500">Project Report - <span id="reportPeriod">Loading...</span></p>
+    <header class="bg-[#0f172a] text-white p-6 flex flex-col md:flex-row justify-between items-center shadow-xl sticky top-0 z-50">
+        <div class="mb-4 md:mb-0 flex items-center space-x-3">
+            <div class="h-10 w-10 bg-indigo-600 rounded-lg flex items-center justify-center font-bold text-xl">A</div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">ARL Civil Projects SCM</h1>
+                <p class="text-xs text-slate-400">AI Driven Project Report - <span id="reportPeriod" class="font-medium text-cyan-400">Initializing...</span></p>
+            </div>
         </div>
-        <div class="flex items-center space-x-4">
-            <label class="text-sm font-medium">Select Month:</label>
-            <select id="monthSelector" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <div class="flex items-center space-x-4 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700">
+            <label class="text-sm font-medium text-slate-300">Select Month:</label>
+            <select id="monthSelector" class="bg-slate-900 text-white border border-slate-600 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer">
                 <option>Loading...</option>
             </select>
         </div>
     </header>
 
-    <main class="p-6 space-y-6">
+    <main class="p-6 md:p-8 space-y-8">
         
         <!-- KPI Cards Row -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Total Tasks</p>
-                <h2 id="kpiTotal" class="text-3xl font-bold text-gray-900 mt-1">0</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="card p-5 animate-fadeInUp" style="animation-delay: 0.1s">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm text-slate-500 font-medium">Total Tasks</p>
+                    <span class="text-indigo-600 text-xs font-bold">📈 ALL</span>
+                </div>
+                <h2 id="kpiTotal" class="text-4xl font-bold text-slate-800">0</h2>
             </div>
-            <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Total Planned Value</p>
-                <h2 id="kpiValue" class="text-3xl font-bold text-blue-600 mt-1">₹0</h2>
+            <div class="card gradient-card p-5 animate-fadeInUp" style="animation-delay: 0.2s">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm text-indigo-100 font-medium">Planned Value</p>
+                    <span class="text-white text-xs font-bold">💰 BDT</span>
+                </div>
+                <h2 id="kpiValue" class="text-4xl font-bold">৳0</h2>
             </div>
-            <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Total Variance</p>
-                <h2 id="kpiVariance" class="text-3xl font-bold text-purple-600 mt-1">0</h2>
+            <div class="card p-5 animate-fadeInUp" style="animation-delay: 0.3s">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm text-slate-500 font-medium">Total Variance</p>
+                    <span class="text-purple-600 text-xs font-bold">📉 VAR</span>
+                </div>
+                <h2 id="kpiVariance" class="text-4xl font-bold text-slate-800">0</h2>
             </div>
-            <div class="card p-4">
-                <p class="text-sm text-gray-500 font-medium">Avg. SPI</p>
-                <h2 id="kpiSPI" class="text-3xl font-bold text-green-600 mt-1">0</h2>
+            <div class="card dark-card p-5 animate-fadeInUp" style="animation-delay: 0.4s">
+                <div class="flex justify-between items-start mb-2">
+                    <p class="text-sm text-slate-400 font-medium">Avg. SPI</p>
+                    <span class="text-cyan-400 text-xs font-bold">⚡ SPEED</span>
+                </div>
+                <h2 id="kpiSPI" class="text-4xl font-bold text-cyan-400">0.00</h2>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <!-- Left Column: Tables & Gantt -->
-            <div class="lg:col-span-2 space-y-6">
+            <div class="lg:col-span-2 space-y-8">
                 <!-- Project Task Summary -->
-                <div class="card p-5">
-                    <h3 class="text-lg font-bold mb-4">PROJECT TASK SUMMARY</h3>
-                    <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
-                        <table class="w-full text-sm text-left table-auto">
-                            <thead class="bg-gray-50 text-gray-600 uppercase text-xs sticky top-0">
+                <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.5s">
+                    <div class="flex justify-between items-center mb-5">
+                        <h3 class="text-lg font-bold text-slate-800">Project Task Summary</h3>
+                        <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">Live Data</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-[450px] overflow-y-auto rounded-lg border border-slate-100">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-500 uppercase text-xs sticky top-0 z-10">
                                 <tr>
-                                    <th class="p-3 whitespace-nowrap">Project Name</th>
-                                    <th class="p-3 whitespace-nowrap">Responsible</th>
-                                    <th class="p-3 whitespace-nowrap">Planned Cost</th>
-                                    <th class="p-3 whitespace-nowrap">Variance</th>
-                                    <th class="p-3 whitespace-nowrap">Action Plan</th>
-                                    <th class="p-3 whitespace-nowrap">Tracking Link</th>
+                                    <th class="p-4">Project Name</th>
+                                    <th class="p-4">Responsible</th>
+                                    <th class="p-4">Cost (BDT)</th>
+                                    <th class="p-4">Variance</th>
+                                    <th class="p-4">Action Plan</th>
+                                    <th class="p-4">Track</th>
                                 </tr>
                             </thead>
-                            <tbody id="taskTableBody" class="divide-y divide-gray-100">
-                                <tr><td colspan="6" class="p-4 text-center text-gray-400">Fetching data...</td></tr>
+                            <tbody id="taskTableBody" class="divide-y divide-slate-100">
+                                <tr><td colspan="6" class="p-8 text-center text-slate-400">Fetching data...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
                 <!-- Gantt View -->
-                <div class="card p-5">
-                    <h3 class="text-lg font-bold mb-4">PLANNING & TRACKING (GANTT VIEW)</h3>
-                    <div id="ganttContainer" class="space-y-3 max-h-[300px] overflow-y-auto">
-                        <!-- Gantt bars will be injected here -->
+                <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.6s">
+                    <h3 class="text-lg font-bold text-slate-800 mb-5">Planning & Tracking (Gantt View)</h3>
+                    <div id="ganttContainer" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                        <!-- Gantt bars injected here -->
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Charts & AI Analysis -->
-            <div class="space-y-6">
-                <!-- AI Analysis -->
-                <div class="card p-5 bg-red-50 border border-red-100">
-                    <h3 class="text-lg font-bold mb-4 text-red-700">⚠️ AI PROJECT ANALYSIS</h3>
-                    <div id="aiAnalysis" class="text-sm text-gray-700 space-y-2">
-                        Analyzing data...
+            <!-- Right Column: AI & Risk -->
+            <div class="space-y-8">
+                <!-- AI Analysis Box -->
+                <div class="card p-6 bg-slate-900 border border-slate-700 relative overflow-hidden animate-fadeInUp" style="animation-delay: 0.7s">
+                    <div class="flex items-center mb-4">
+                        <div class="h-8 w-8 bg-cyan-500 rounded-full flex items-center justify-center mr-3 ai-glow">
+                            <span class="font-bold text-sm">AI</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">AI Project Analysis</h3>
+                    </div>
+                    <div id="aiScanner" class="relative h-2 bg-slate-800 rounded-full mb-4 overflow-hidden">
+                        <div class="scanner-line"></div>
+                    </div>
+                    <div id="aiAnalysis" class="text-sm text-slate-300 space-y-3 min-h-[150px] font-mono">
+                        <span class="text-cyan-400">> Initializing AI engine...</span>
                     </div>
                 </div>
 
                 <!-- Risk & Remarks -->
-                <div class="card p-5">
-                    <h3 class="text-lg font-bold mb-4">RISK & PROJECT REMARKS</h3>
-                    <div id="riskRemarks" class="space-y-3 text-sm max-h-[300px] overflow-y-auto">
+                <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.8s">
+                    <h3 class="text-lg font-bold text-slate-800 mb-5">Risk & Project Remarks</h3>
+                    <div id="riskRemarks" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                         <!-- Remarks injected here -->
                     </div>
                 </div>
@@ -110,19 +181,47 @@
     </main>
 
     <script>
-        // PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
+        // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
         const API_URL = "https://script.google.com/macros/s/AKfycbxtBHi0_XBXotRMSM54m3wYfLlPlLwmMySDR-wbVo3mHC-LEpoCXmq2qd95Iurzrqe3WQ/exec";
         
-        // Helper function to find the correct column even if sheet has slight spelling differences
+        // Helper function to find the correct column
         function getField(row, searchTerms) {
             for (let key in row) {
                 let lowerKey = key.toLowerCase();
-                // Check if the header contains any of the search terms
                 if (searchTerms.some(term => lowerKey.includes(term))) {
                     return row[key];
                 }
             }
             return null;
+        }
+
+        // Animated Counter for KPIs
+        function animateValue(id, start, end, duration, prefix = '', suffix = '') {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                obj.innerText = prefix + value.toLocaleString() + suffix;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Typewriter effect for AI
+        function typeAI(text, i, fnCallback) {
+            if (i < text.length) {
+                document.getElementById('aiAnalysis').innerHTML = text.substring(0, i+1) + '<span class="text-cyan-400 animate-pulse">_</span>';
+                setTimeout(function() {
+                    typeAI(text, i + 1, fnCallback)
+                }, 15); // Speed of typing
+            } else if (typeof fnCallback == 'function') {
+                setTimeout(fnCallback, 700);
+                document.getElementById('aiAnalysis').innerHTML = text;
+            }
         }
 
         async function fetchData(sheetName = null) {
@@ -133,7 +232,6 @@
                 const response = await fetch(url);
                 const result = await response.json();
                 
-                // Populate Month Selector
                 const selector = document.getElementById('monthSelector');
                 selector.innerHTML = '';
                 if(result.availableMonths && result.availableMonths.length > 0) {
@@ -144,8 +242,6 @@
                         if (month === result.activeMonth) option.selected = true;
                         selector.appendChild(option);
                     });
-                } else {
-                    selector.innerHTML = '<option>No Sheets Found</option>';
                 }
 
                 document.getElementById('reportPeriod').innerText = result.activeMonth ? result.activeMonth.replace('RACI matrix ', '') : 'N/A';
@@ -153,25 +249,20 @@
                 if(result.data && result.data.length > 0) {
                     renderDashboard(result.data);
                 } else {
-                    // Clear dashboard if no data
-                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-400">No data found for this month.</td></tr>';
+                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">No data found for this month.</td></tr>';
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
-                alert("Failed to fetch data. Check console for details.");
             }
         }
 
         function renderDashboard(data) {
-            // KPIs
-            document.getElementById('kpiTotal').innerText = data.length;
-            
+            // Animate KPIs
             let totalPlannedValue = 0;
             let totalVariance = 0;
             let totalSPI = 0;
             let spiCount = 0;
 
-            // Render Task Table
             const tbody = document.getElementById('taskTableBody');
             tbody.innerHTML = '';
             const gantt = document.getElementById('ganttContainer');
@@ -180,9 +271,9 @@
             riskDiv.innerHTML = '';
 
             let delayCount = 0;
+            let completedCount = 0;
 
-            data.forEach(row => {
-                // Smartly extract fields based on partial header names
+            data.forEach((row, index) => {
                 let projectName = getField(row, ['project name', 'task name', 'description']) || 'N/A';
                 let responsible = getField(row, ['responsible', 'owner', 'r person']) || 'N/A';
                 let plannedValue = parseFloat(getField(row, ['planned value', 'planned cost', 'budget'])) || 0;
@@ -193,30 +284,27 @@
                 let trackingLink = getField(row, ['tracking board link', 'tracking link', 'board link', 'url', 'link']) || '';
                 let status = getField(row, ['status', 'current status']) || '';
 
-                // KPI Math
                 totalPlannedValue += plannedValue;
                 totalVariance += parseFloat(variance) || 0;
                 if (spi > 0) { totalSPI += spi; spiCount++; }
 
-                // Status formatting
-                let statusClass = 'status-partial';
-                if(String(status).toLowerCase().includes('completed') && !String(status).toLowerCase().includes('partial')) statusClass = 'status-completed';
-                if(String(status).toLowerCase().includes('delay')) {
-                    statusClass = 'status-delay';
-                    delayCount++;
-                }
+                let statusText = String(status).toLowerCase();
+                let statusClass = 'bg-pipeline';
+                if(statusText.includes('completed') && !statusText.includes('partial')) { statusClass = 'bg-completed'; completedCount++; }
+                if(statusText.includes('delay')) { statusClass = 'bg-delay'; delayCount++; }
+                if(statusText.includes('partial')) { statusClass = 'bg-partial'; }
 
-                // Table Row
-                let linkHtml = trackingLink ? `<a href="${trackingLink}" target="_blank" class="text-blue-600 underline">Open Link</a>` : 'N/A';
+                // Table Row with animation delay
+                let linkHtml = trackingLink ? `<a href="${trackingLink}" target="_blank" class="text-indigo-600 font-medium hover:underline">View</a>` : '<span class="text-slate-300">N/A</span>';
                 
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 font-medium whitespace-normal">${projectName}</td>
-                        <td class="p-3 whitespace-nowrap">${responsible}</td>
-                        <td class="p-3 whitespace-nowrap">₹${plannedValue.toFixed(2)} Cr</td>
-                        <td class="p-3 whitespace-nowrap">${variance}</td>
-                        <td class="p-3 whitespace-normal text-xs">${actionPlan}</td>
-                        <td class="p-3 whitespace-nowrap">${linkHtml}</td>
+                    <tr class="hover:bg-slate-50 transition-colors animate-fadeInUp" style="animation-delay: ${0.05 * index}s">
+                        <td class="p-4 font-medium text-slate-800">${projectName}</td>
+                        <td class="p-4 text-slate-600">${responsible}</td>
+                        <td class="p-4 text-slate-600">৳${plannedValue.toFixed(2)} Cr</td>
+                        <td class="p-4 text-slate-600">${variance}</td>
+                        <td class="p-4 text-xs text-slate-500 max-w-[200px] truncate" title="${actionPlan}">${actionPlan}</td>
+                        <td class="p-4">${linkHtml}</td>
                     </tr>
                 `;
 
@@ -225,52 +313,63 @@
                 if(progress > 100) progress = 100;
                 if(progress < 0) progress = 0;
                 
-                let barColor = 'bg-green-500';
-                if(String(status).toLowerCase().includes('delay')) barColor = 'bg-red-500';
-                else if(String(status).toLowerCase().includes('partial')) barColor = 'bg-yellow-500';
+                let barColor = 'bg-indigo-500';
+                if(statusText.includes('delay')) barColor = 'bg-red-500';
+                else if(statusText.includes('partial')) barColor = 'bg-amber-500';
+                else if(statusText.includes('completed')) barColor = 'bg-emerald-500';
 
                 gantt.innerHTML += `
-                    <div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="font-medium">${projectName.substring(0, 40)}${projectName.length > 40 ? '...' : ''}</span>
-                            <span>SPI: ${spi.toFixed(2)}</span>
+                    <div class="gantt-row animate-fadeInUp" style="animation-delay: ${0.03 * index}s">
+                        <div class="flex justify-between text-xs mb-1.5">
+                            <span class="font-semibold text-slate-700 truncate w-3/4">${projectName}</span>
+                            <span class="text-slate-400 ml-2">${progress.toFixed(0)}%</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="${barColor} h-2.5 rounded-full" style="width: ${progress}%"></div>
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden flex">
+                            <div class="${barColor} h-3 rounded-full transition-all duration-1000 ease-out" style="width: 0%" data-width="${progress}%"></div>
                         </div>
                     </div>
                 `;
 
                 // Risk & Remarks
-                if(String(status).toLowerCase().includes('delay') || String(status).toLowerCase().includes('partial')) {
+                if(statusText.includes('delay') || statusText.includes('partial')) {
                     riskDiv.innerHTML += `
-                        <div class="border-l-4 border-red-500 pl-3 py-1 bg-red-50">
-                            <p class="font-medium text-gray-900">${projectName.substring(0, 50)}${projectName.length > 50 ? '...' : ''}</p>
-                            <p class="text-gray-600 text-xs mt-1"><b>Action:</b> ${actionPlan}</p>
-                            <p class="text-gray-500 text-xs"><b>Owner:</b> ${responsible}</p>
+                        <div class="border-l-4 ${statusText.includes('delay') ? 'border-red-500' : 'border-amber-500'} pl-4 py-3 bg-slate-50 rounded-r-lg animate-fadeInUp" style="animation-delay: ${0.03 * index}s">
+                            <p class="font-semibold text-slate-800 text-sm">${projectName.substring(0, 50)}${projectName.length > 50 ? '...' : ''}</p>
+                            <p class="text-slate-500 text-xs mt-1"><b>Action:</b> ${actionPlan}</p>
+                            <p class="text-slate-400 text-xs mt-1"><b>Owner:</b> ${responsible}</p>
                         </div>
                     `;
                 }
             });
 
-            // Update Final KPIs
-            document.getElementById('kpiValue').innerText = `₹${totalPlannedValue.toFixed(2)} Cr`;
-            document.getElementById('kpiVariance').innerText = totalVariance.toFixed(2);
-            document.getElementById('kpiSPI').innerText = spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0';
+            // Animate KPI Counters
+            animateValue('kpiTotal', 0, data.length, 1000);
+            animateValue('kpiValue', 0, totalPlannedValue, 1200, '৳', ' Cr');
+            animateValue('kpiVariance', 0, totalVariance, 1200);
+            document.getElementById('kpiSPI').innerText = spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00';
 
-            // AI Analysis
-            let completedCount = data.filter(d => String(getField(d, ['status'])).toLowerCase().includes('completed') && !String(getField(d, ['status'])).toLowerCase().includes('partial')).length;
-            
-            document.getElementById('aiAnalysis').innerHTML = `
-                <p>🔴 <b>High Risk Detected:</b> There are ${delayCount} delayed tasks.</p>
-                <p>✅ <b>Healthy Progress:</b> ${completedCount} tasks successfully completed.</p>
-                <p>📊 <b>Financials:</b> Total Planned Value is ₹${totalPlannedValue.toFixed(2)} Cr with a variance of ${totalVariance.toFixed(2)}.</p>
-                <p>⏱️ <b>Schedule:</b> Average Schedule Performance Index (SPI) is ${spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0'}.</p>
-            `;
+            // Animate Gantt Bars width on load
+            setTimeout(() => {
+                document.querySelectorAll('#ganttContainer div[data-width]').forEach(bar => {
+                    bar.style.width = bar.getAttribute('data-width');
+                });
+            }, 100);
+
+            // AI Analysis Typing Effect
+            setTimeout(() => {
+                document.getElementById('aiScanner').style.display = 'none';
+                let aiText = `> System: Analysis Complete.\n> 🔴 High Risk: Detected ${delayCount} delayed tasks.\n> ✅ Completed: ${completedCount} tasks successfully done.\n> 📊 Financials: Total Planned Value ৳${totalPlannedValue.toFixed(2)} Cr.\n> ⏱️ Schedule: Average SPI is ${(spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00')}.`;
+                
+                document.getElementById('aiAnalysis').innerHTML = '';
+                typeAI(aiText, 0, function(){});
+            }, 1500); // 1.5 sec delay to show scanner animation
         }
 
         // Event Listener for Month Change
         document.getElementById('monthSelector').addEventListener('change', (e) => {
+            // Reset AI Box to loading state on month change
+            document.getElementById('aiScanner').style.display = 'block';
+            document.getElementById('aiAnalysis').innerHTML = '<span class="text-cyan-400">> Re-calibrating AI model...</span>';
             fetchData(e.target.value);
         });
 
