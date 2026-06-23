@@ -61,13 +61,13 @@
             <div class="flex items-center space-x-2 w-full sm:w-auto">
                 <label class="text-sm font-medium text-slate-300 whitespace-nowrap">SBU:</label>
                 <select id="sbuSelector" class="bg-slate-900 text-white border border-slate-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer w-full">
-                    <option>ALL</option>
+                    <option value="ALL">ALL</option>
                 </select>
             </div>
             <div class="flex items-center space-x-2 w-full sm:w-auto">
                 <label class="text-sm font-medium text-slate-300 whitespace-nowrap">Month:</label>
                 <select id="monthSelector" class="bg-slate-900 text-white border border-slate-600 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 cursor-pointer w-full">
-                    <option>Loading...</option>
+                    <option value="ALL">All Months</option>
                 </select>
             </div>
         </div>
@@ -184,6 +184,7 @@
         // PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
         const API_URL = "https://script.google.com/macros/s/AKfycbyLhKkbtVMTB9ikk-FwIDeH8GOOLezy3d1k-lnxJF7vrHApbUo47JxbX5iLSCobtU2Hiw/exec";
         
+        // Helper to find column regardless of exact spelling
         function getField(row, searchTerms) {
             for (let key in row) {
                 let lowerKey = key.toLowerCase();
@@ -194,6 +195,15 @@
             return null;
         }
 
+        // Helper to clean numbers (removes commas, symbols, and extracts the number)
+        function cleanNumber(value) {
+            if (!value) return 0;
+            // Convert to string, remove everything except digits, minus, and decimal point
+            let cleaned = String(value).replace(/[^0-9.-]/g, '');
+            return parseFloat(cleaned) || 0;
+        }
+
+        // Animated Counter for KPIs
         function animateValue(id, start, end, duration, prefix = '', suffix = '') {
             const obj = document.getElementById(id);
             let startTimestamp = null;
@@ -209,6 +219,7 @@
             window.requestAnimationFrame(step);
         }
 
+        // Typewriter effect for AI
         function typeAI(text, i, fnCallback) {
             if (i < text.length) {
                 document.getElementById('aiAnalysis').innerHTML = text.substring(0, i+1) + '<span class="text-cyan-400 animate-pulse">_</span>';
@@ -230,6 +241,8 @@
             
             try {
                 const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
                 const result = await response.json();
                 
                 // Populate Month Selector
@@ -237,7 +250,7 @@
                 let currentMonthVal = monthSelector.value;
                 monthSelector.innerHTML = '<option value="ALL">All Months</option>';
                 if(result.availableMonths && result.availableMonths.length > 0) {
-                    result.availableMonths.reverse().forEach(month => { // reverse to show latest first
+                    result.availableMonths.reverse().forEach(month => {
                         let option = document.createElement('option');
                         option.value = month;
                         option.innerText = month.replace('RACI matrix ', '');
@@ -245,8 +258,8 @@
                     });
                 }
                 if (sheetName) monthSelector.value = sheetName;
-                else if (currentMonthVal) monthSelector.value = currentMonthVal;
-                else monthSelector.value = result.activeMonth;
+                else if (currentMonthVal && currentMonthVal !== 'Loading...') monthSelector.value = currentMonthVal;
+                else if (result.activeMonth) monthSelector.value = result.activeMonth;
 
                 // Populate SBU Selector
                 const sbuSelector = document.getElementById('sbuSelector');
@@ -261,7 +274,7 @@
                     });
                 }
                 if (sbuName) sbuSelector.value = sbuName;
-                else if (currentSbuVal && currentSbuVal !== 'Loading...') sbuSelector.value = currentSbuVal;
+                else if (currentSbuVal && currentSbuVal !== 'ALL') sbuSelector.value = currentSbuVal;
 
                 // Update Period Text
                 let periodText = monthSelector.value === 'ALL' ? 'All Months' : monthSelector.options[monthSelector.selectedIndex].text;
@@ -271,12 +284,14 @@
                 if(result.data && result.data.length > 0) {
                     renderDashboard(result.data);
                 } else {
-                    // Clear dashboard if no data
                     document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No data found for this selection.</td></tr>';
+                    document.getElementById('ganttContainer').innerHTML = '<div class="text-center text-slate-400 py-8">No data available</div>';
+                    document.getElementById('riskRemarks').innerHTML = '<div class="text-center text-slate-400 py-4">No risks identified</div>';
                     renderDashboard([]);
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
+                document.getElementById('taskTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500">Failed to load data. Please check your API URL and Google Sheet permissions.<br><small>${error}</small></td></tr>`;
             }
         }
 
@@ -312,17 +327,23 @@
                 let projectName = getField(row, ['project name', 'task name', 'description']) || 'N/A';
                 let sbu = getField(row, ['department', 'sbu', 'business unit']) || 'N/A';
                 let responsible = getField(row, ['responsible', 'owner', 'r person']) || 'N/A';
-                let plannedValue = parseFloat(getField(row, ['planned value', 'planned cost', 'budget'])) || 0;
-                let earnedValue = parseFloat(getField(row, ['earned value', 'completed value'])) || 0;
-                let variance = getField(row, ['variance']) || 0;
-                let spi = parseFloat(getField(row, ['spi', 'schedule performance'])) || 0;
+                
+                // Using cleanNumber to handle commas and symbols properly
+                let plannedValue = cleanNumber(getField(row, ['planned value', 'planned', 'budget', 'pv']));
+                let earnedValue = cleanNumber(getField(row, ['earned value', 'earned', 'completed value', 'actual', 'ev']));
+                let variance = cleanNumber(getField(row, ['variance', 'var', 'cv', 'sv']));
+                let spi = cleanNumber(getField(row, ['spi', 'schedule performance', 'performance index']));
+                
                 let actionPlan = getField(row, ['action plan', 'action']) || 'No action plan';
                 let trackingLink = getField(row, ['tracking board link', 'tracking link', 'board link', 'url', 'link']) || '';
                 let status = getField(row, ['status', 'current status']) || '';
 
                 totalPlannedValue += plannedValue;
                 totalEarnedValue += earnedValue;
-                totalVariance += parseFloat(variance) || 0;
+                totalVariance += variance;
+                
+                // SPI Fix: If SPI is written as a percentage (e.g., 95% instead of 0.95)
+                if (spi > 1) spi = spi / 100; 
                 if (spi > 0) { totalSPI += spi; spiCount++; }
 
                 let statusText = String(status).toLowerCase();
@@ -349,7 +370,7 @@
                         <td class="p-4 text-slate-600">${responsible}</td>
                         <td class="p-4 text-slate-600">৳${plannedValue.toLocaleString('en-US')}</td>
                         <td class="p-4 text-slate-600">৳${earnedValue.toLocaleString('en-US')}</td>
-                        <td class="p-4 text-slate-600">${variance}</td>
+                        <td class="p-4 text-slate-600">${variance.toLocaleString('en-US')}</td>
                         <td class="p-4 text-xs text-slate-500 max-w-[200px] truncate" title="${actionPlan}">${actionPlan}</td>
                         <td class="p-4">${linkHtml}</td>
                     </tr>
