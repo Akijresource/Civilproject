@@ -44,6 +44,10 @@
         .bg-pipeline { background-color: #e0e7ff; color: #4f46e5; }
         .gantt-row { transition: transform 0.2s; }
         .gantt-row:hover { transform: scale(1.02); }
+
+        .track-btn { background: #4f46e5; color: white; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; transition: 0.2s; cursor: pointer; border: none; }
+        .track-btn:hover { background: #4338ca; transform: translateY(-1px); }
+        .track-btn:disabled { background: #cbd5e1; cursor: not-allowed; transform: none; }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -75,7 +79,7 @@
 
     <main class="p-6 md:p-8 space-y-8">
         
-        <!-- KPI Cards Row (8 Cards) -->
+        <!-- KPI Cards Row -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div class="card p-4 animate-fadeInUp" style="animation-delay: 0.1s">
                 <p class="text-xs text-slate-500 font-medium mb-1">Total Tasks</p>
@@ -113,7 +117,7 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <!-- Left Column: Tables & Gantt -->
+            <!-- Left Column: Tables & Embedded Tracking -->
             <div class="lg:col-span-2 space-y-8">
                 <!-- Project Task Summary -->
                 <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.7s">
@@ -127,31 +131,38 @@
                                 <tr>
                                     <th class="p-4">Project Name</th>
                                     <th class="p-4">SBU</th>
-                                    <th class="p-4">Responsible</th>
-                                    <th class="p-4">Planned (৳)</th>
-                                    <th class="p-4">Earned (৳)</th>
+                                    <th class="p-4">Status</th>
                                     <th class="p-4">Variance</th>
-                                    <th class="p-4">Action Plan</th>
-                                    <th class="p-4">Track</th>
+                                    <th class="p-4 text-center">Live Board</th>
                                 </tr>
                             </thead>
                             <tbody id="taskTableBody" class="divide-y divide-slate-100">
-                                <tr><td colspan="8" class="p-8 text-center text-slate-400">Fetching data...</td></tr>
+                                <tr><td colspan="5" class="p-8 text-center text-slate-400">Fetching data...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- Gantt View -->
-                <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.8s">
-                    <h3 class="text-lg font-bold text-slate-800 mb-5">Planning & Tracking (Gantt View)</h3>
-                    <div id="ganttContainer" class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                        <!-- Gantt bars injected here -->
+                <!-- Embedded Live Tracking Board -->
+                <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.75s">
+                    <div class="flex justify-between items-center mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-800">Live Tracking Board</h3>
+                            <p class="text-xs text-slate-500" id="iframeSubTitle">Select a project above to load its Gantt/Tracking sheet here.</p>
+                        </div>
+                        <button id="openFullBtn" onclick="window.open(document.getElementById('trackingFrame').src, '_blank')" class="hidden bg-slate-100 text-slate-600 px-3 py-1.5 rounded-md text-xs font-medium hover:bg-slate-200">Open Full Screen ↗</button>
+                    </div>
+                    <div class="w-full h-[600px] bg-slate-100 rounded-lg overflow-hidden border border-slate-200 relative">
+                        <iframe id="trackingFrame" src="" class="w-full h-full" style="border:none;"></iframe>
+                        <div id="iframePlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                            <svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <p>No Project Selected</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: AI & Risk -->
+            <!-- Right Column: AI, Visual Gantt & Risk -->
             <div class="space-y-8">
                 <!-- AI Analysis Box -->
                 <div class="card p-6 bg-slate-900 border border-slate-700 relative overflow-hidden animate-fadeInUp" style="animation-delay: 0.9s">
@@ -169,10 +180,18 @@
                     </div>
                 </div>
 
+                <!-- Visual Gantt Overview -->
+                <div class="card p-6 animate-fadeInUp" style="animation-delay: 0.8s">
+                    <h3 class="text-lg font-bold text-slate-800 mb-5">Visual Gantt Overview</h3>
+                    <div id="ganttContainer" class="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                        <!-- Gantt bars injected here -->
+                    </div>
+                </div>
+
                 <!-- Risk & Remarks -->
                 <div class="card p-6 animate-fadeInUp" style="animation-delay: 1.0s">
                     <h3 class="text-lg font-bold text-slate-800 mb-5">Risk & Project Remarks</h3>
-                    <div id="riskRemarks" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                    <div id="riskRemarks" class="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                         <!-- Remarks injected here -->
                     </div>
                 </div>
@@ -184,7 +203,6 @@
         // PASTE YOUR NEW GOOGLE APPS SCRIPT WEB APP URL HERE
         const API_URL = "https://script.google.com/macros/s/AKfycbyLhKkbtVMTB9ikk-FwIDeH8GOOLezy3d1k-lnxJF7vrHApbUo47JxbX5iLSCobtU2Hiw/exec";
         
-        // Helper to find column regardless of exact spelling
         function getField(row, searchTerms) {
             for (let key in row) {
                 let lowerKey = key.toLowerCase();
@@ -195,15 +213,12 @@
             return null;
         }
 
-        // Helper to clean numbers (removes commas, symbols, and extracts the number)
         function cleanNumber(value) {
             if (!value) return 0;
-            // Convert to string, remove everything except digits, minus, and decimal point
             let cleaned = String(value).replace(/[^0-9.-]/g, '');
             return parseFloat(cleaned) || 0;
         }
 
-        // Animated Counter for KPIs
         function animateValue(id, start, end, duration, prefix = '', suffix = '') {
             const obj = document.getElementById(id);
             let startTimestamp = null;
@@ -219,7 +234,6 @@
             window.requestAnimationFrame(step);
         }
 
-        // Typewriter effect for AI
         function typeAI(text, i, fnCallback) {
             if (i < text.length) {
                 document.getElementById('aiAnalysis').innerHTML = text.substring(0, i+1) + '<span class="text-cyan-400 animate-pulse">_</span>';
@@ -229,6 +243,38 @@
             } else if (typeof fnCallback == 'function') {
                 setTimeout(fnCallback, 700);
                 document.getElementById('aiAnalysis').innerHTML = text;
+            }
+        }
+
+        // Function to format Google Sheet URL for embedding
+        function formatEmbedUrl(url) {
+            if (!url) return null;
+            // If it's a standard google sheet edit link, change to preview for embed
+            if (url.includes('docs.google.com/spreadsheets/d/') && url.includes('/edit')) {
+                return url.replace('/edit', '/preview');
+            }
+            return url;
+        }
+
+        // Function triggered when "View Live Board" is clicked
+        function loadTrackingBoard(link, projectName) {
+            const iframe = document.getElementById('trackingFrame');
+            const placeholder = document.getElementById('iframePlaceholder');
+            const subTitle = document.getElementById('iframeSubTitle');
+            const openBtn = document.getElementById('openFullBtn');
+            
+            if (link) {
+                let embedLink = formatEmbedUrl(link);
+                iframe.src = embedLink;
+                placeholder.style.display = 'none';
+                subTitle.innerText = `Currently viewing: ${projectName}`;
+                openBtn.classList.remove('hidden');
+                openBtn.onclick = () => window.open(link, '_blank');
+            } else {
+                iframe.src = '';
+                placeholder.style.display = 'flex';
+                subTitle.innerText = 'No tracking sheet linked for this project.';
+                openBtn.classList.add('hidden');
             }
         }
 
@@ -284,14 +330,14 @@
                 if(result.data && result.data.length > 0) {
                     renderDashboard(result.data);
                 } else {
-                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="8" class="p-8 text-center text-slate-400">No data found for this selection.</td></tr>';
+                    document.getElementById('taskTableBody').innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">No data found for this selection.</td></tr>';
                     document.getElementById('ganttContainer').innerHTML = '<div class="text-center text-slate-400 py-8">No data available</div>';
                     document.getElementById('riskRemarks').innerHTML = '<div class="text-center text-slate-400 py-4">No risks identified</div>';
-                    renderDashboard([]);
+                    renderDashboard([]); // Reset KPIs to 0
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
-                document.getElementById('taskTableBody').innerHTML = `<tr><td colspan="8" class="p-8 text-center text-red-500">Failed to load data. Please check your API URL and Google Sheet permissions.<br><small>${error}</small></td></tr>`;
+                document.getElementById('taskTableBody').innerHTML = `<tr><td colspan="5" class="p-8 text-center text-red-500">Failed to load data. Check API URL.<br><small>${error}</small></td></tr>`;
             }
         }
 
@@ -322,18 +368,16 @@
 
             let delayCount = 0;
             let completedCount = 0;
+            let firstValidLink = null;
+            let firstProjectName = '';
 
             data.forEach((row, index) => {
                 let projectName = getField(row, ['project name', 'task name', 'description']) || 'N/A';
                 let sbu = getField(row, ['department', 'sbu', 'business unit']) || 'N/A';
-                let responsible = getField(row, ['responsible', 'owner', 'r person']) || 'N/A';
-                
-                // Using cleanNumber to handle commas and symbols properly
                 let plannedValue = cleanNumber(getField(row, ['planned value', 'planned', 'budget', 'pv']));
                 let earnedValue = cleanNumber(getField(row, ['earned value', 'earned', 'completed value', 'actual', 'ev']));
                 let variance = cleanNumber(getField(row, ['variance', 'var', 'cv', 'sv']));
                 let spi = cleanNumber(getField(row, ['spi', 'schedule performance', 'performance index']));
-                
                 let actionPlan = getField(row, ['action plan', 'action']) || 'No action plan';
                 let trackingLink = getField(row, ['tracking board link', 'tracking link', 'board link', 'url', 'link']) || '';
                 let status = getField(row, ['status', 'current status']) || '';
@@ -342,7 +386,6 @@
                 totalEarnedValue += earnedValue;
                 totalVariance += variance;
                 
-                // SPI Fix: If SPI is written as a percentage (e.g., 95% instead of 0.95)
                 if (spi > 1) spi = spi / 100; 
                 if (spi > 0) { totalSPI += spi; spiCount++; }
 
@@ -361,18 +404,23 @@
                 if(statusText.includes('delay')) { statusClass = 'bg-delay'; delayCount++; }
                 if(statusText.includes('partial')) { statusClass = 'bg-partial'; }
 
-                let linkHtml = trackingLink ? `<a href="${trackingLink}" target="_blank" class="text-indigo-600 font-medium hover:underline">View</a>` : '<span class="text-slate-300">N/A</span>';
-                
+                // Store the first link to auto-load the iframe
+                if (!firstValidLink && trackingLink) {
+                    firstValidLink = trackingLink;
+                    firstProjectName = projectName;
+                }
+
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 transition-colors animate-fadeInUp" style="animation-delay: ${0.05 * index}s">
                         <td class="p-4 font-medium text-slate-800">${projectName}</td>
                         <td class="p-4 text-slate-600">${sbu}</td>
-                        <td class="p-4 text-slate-600">${responsible}</td>
-                        <td class="p-4 text-slate-600">৳${plannedValue.toLocaleString('en-US')}</td>
-                        <td class="p-4 text-slate-600">৳${earnedValue.toLocaleString('en-US')}</td>
+                        <td class="p-4"><span class="status-badge ${statusClass}">${status || 'N/A'}</span></td>
                         <td class="p-4 text-slate-600">${variance.toLocaleString('en-US')}</td>
-                        <td class="p-4 text-xs text-slate-500 max-w-[200px] truncate" title="${actionPlan}">${actionPlan}</td>
-                        <td class="p-4">${linkHtml}</td>
+                        <td class="p-4 text-center">
+                            <button class="track-btn" onclick="loadTrackingBoard('${trackingLink}', \`${projectName.replace(/'/g, "\\'")}\`)" ${trackingLink ? '' : 'disabled'}>
+                                ${trackingLink ? 'View Live Board' : 'No Link'}
+                            </button>
+                        </td>
                     </tr>
                 `;
 
@@ -402,11 +450,17 @@
                         <div class="border-l-4 ${statusText.includes('delay') ? 'border-red-500' : 'border-amber-500'} pl-4 py-3 bg-slate-50 rounded-r-lg animate-fadeInUp" style="animation-delay: ${0.03 * index}s">
                             <p class="font-semibold text-slate-800 text-sm">${projectName.substring(0, 50)}${projectName.length > 50 ? '...' : ''}</p>
                             <p class="text-slate-500 text-xs mt-1"><b>Action:</b> ${actionPlan}</p>
-                            <p class="text-slate-400 text-xs mt-1"><b>Owner:</b> ${responsible}</p>
                         </div>
                     `;
                 }
             });
+
+            // Auto-load the first available tracking board when data renders
+            if (firstValidLink) {
+                loadTrackingBoard(firstValidLink, firstProjectName);
+            } else {
+                loadTrackingBoard(null, '');
+            }
 
             // Animate KPI Counters
             animateValue('kpiTotal', 0, data.length, 1000);
@@ -428,7 +482,7 @@
             // AI Analysis Typing Effect
             setTimeout(() => {
                 document.getElementById('aiScanner').style.display = 'none';
-                let aiText = `> System: Analysis Complete.\n> 🟢 Active: ${activeCount} projects currently in progress.\n> 🟡 Pending: ${pendingCount} projects waiting to start.\n> 🔴 Delayed: ${delayCount} tasks need immediate attention.\n> 💰 Budget: Planned ৳${totalPlannedValue.toLocaleString('en-US')} | Earned ৳${totalEarnedValue.toLocaleString('en-US')}.\n> 📉 Variance: Total variance is ${totalVariance.toLocaleString('en-US')}.\n> ⚡ Efficiency: Average SPI is ${(spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00')}.`;
+                let aiText = `> System: Analysis Complete.\n> 🟢 Active: ${activeCount} projects in progress.\n> 🟡 Pending: ${pendingCount} projects waiting.\n> 🔴 Delayed: ${delayCount} tasks need attention.\n> 💰 Budget: Planned ৳${totalPlannedValue.toLocaleString('en-US')} | Earned ৳${totalEarnedValue.toLocaleString('en-US')}.\n> 📉 Variance: ${totalVariance.toLocaleString('en-US')}.\n> ⚡ Efficiency: Average SPI is ${(spiCount > 0 ? (totalSPI / spiCount).toFixed(2) : '0.00')}.`;
                 
                 document.getElementById('aiAnalysis').innerHTML = '';
                 typeAI(aiText, 0, function(){});
@@ -449,7 +503,7 @@
         });
 
         // Initial Load
-        fetchData(); // Defaults to latest month and ALL SBUs
+        fetchData(); 
     </script>
 </body>
 </html>
